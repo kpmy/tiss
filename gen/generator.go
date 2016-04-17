@@ -11,4 +11,8 @@ type Writer interface {
 	WriteValue(interface{}) error
 }
 
-var NewWriter func(io.Writer) Writer
+type Opts struct {
+	PrettyPrint bool
+}
+
+var NewWriter func(io.Writer, ...Opts) Writer

@@ -3,6 +3,7 @@ package sexpr
 import (
 	"io"
 	"reflect"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -16,8 +17,30 @@ const InvalidAtom Error = "invalid name of atom"
 
 const NameTag = "sexpr"
 
+type Named interface {
+	Name() string
+}
+
 type wr struct {
-	base io.Writer
+	base  io.Writer
+	opts  gen.Opts
+	depth int
+}
+
+func (w *wr) Ln() {
+	if w.opts.PrettyPrint {
+		w.base.Write([]byte("\n"))
+	}
+}
+
+func (w *wr) Tab() {
+	if w.opts.PrettyPrint {
+		var buf []rune
+		for i := 0; i < w.depth; i++ {
+			buf = append(buf, '\t')
+		}
+		w.base.Write([]byte(string(buf)))
+	}
 }
 
 func (w *wr) Raw(s string) {
@@ -47,16 +70,22 @@ func (w *wr) Atom(_v interface{}) {
 		w.Raw(v)
 	case ir.Variable:
 		w.Atom(v.ValueOf())
+	case int:
+		w.Raw(strconv.Itoa(v))
 	default:
 		Halt(100, "wrong atom ", reflect.TypeOf(v))
 	}
 }
 
 func getName(i interface{}) (ret string) {
-	t := reflect.ValueOf(i).Elem().Type()
-	for i := 0; i < t.NumField() && ret == ""; i++ {
-		s := t.Field(i)
-		ret = s.Tag.Get(NameTag)
+	if named, ok := i.(Named); ok {
+		ret = named.Name()
+	} else {
+		t := reflect.ValueOf(i).Elem().Type()
+		for i := 0; i < t.NumField() && ret == ""; i++ {
+			s := t.Field(i)
+			ret = s.Tag.Get(NameTag)
+		}
 	}
 	return
 }
@@ -81,16 +110,20 @@ func (w *wr) WriteExpr(e ir.Expression) (err error) {
 	Assert(!fn.IsNil(e), 20)
 	if err = e.Validate(); err == nil {
 		Do(func() {
+			w.Ln()
+			w.Tab()
 			w.Raw("(")
 			w.Atom(getName(e))
 			if n, ok := e.(ir.Node); ok {
 				if el := n.Children(); len(el) > 0 {
+					w.depth++
 					for _, _e := range el {
 						w.Raw(" ")
 						if err = w.WriteValue(_e); err != nil {
 							panic(err)
 						}
 					}
+					w.depth--
 				}
 			}
 			w.Raw(")")
@@ -101,7 +134,15 @@ func (w *wr) WriteExpr(e ir.Expression) (err error) {
 	return err
 }
 
-func New(w io.Writer) gen.Writer {
+func New(w io.Writer, o ...gen.Opts) gen.Writer {
 	Assert(!fn.IsNil(w), 20)
-	return &wr{base: w}
+	ret := &wr{base: w}
+	if len(o) > 0 {
+		ret.opts = o[0]
+	}
+	if ret.opts.PrettyPrint {
+		ret.Raw(";; github.com/kpmy/tiss/generator")
+	}
+
+	return ret
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	gen.NewWriter = func(w io.Writer) gen.Writer {
-		return sexpr.New(w)
+	gen.NewWriter = func(w io.Writer, o ...gen.Opts) gen.Writer {
+		return sexpr.New(w, o...)
 	}
 }
