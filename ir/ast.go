@@ -3,17 +3,9 @@ package ir //import "github.com/kpmy/tiss/ir"
 import (
 	"reflect"
 
+	"github.com/kpmy/tiss/ir/types"
 	"github.com/kpmy/ypk/fn"
 	. "github.com/kpmy/ypk/tc"
-)
-
-type Type string
-
-const (
-	Ti32 Type = "i32"
-	Ti64 Type = "i64"
-	Tf32 Type = "f32"
-	Tf64 Type = "f64"
 )
 
 type Expression interface {
@@ -148,7 +140,7 @@ func (t *TypeRef) Children() (ret []interface{}) {
 
 type ResultExpr struct {
 	ns     `sexpr:"result"`
-	Result Type
+	Result types.Type
 }
 
 func (r *ResultExpr) Validate() error {
@@ -199,10 +191,10 @@ type Local struct {
 
 type object struct {
 	named
-	typ Type
+	typ types.Type
 }
 
-func (o *object) Type(t ...Type) Type {
+func (o *object) Type(t ...types.Type) types.Type {
 	if len(t) > 0 {
 		o.typ = t[0]
 	}

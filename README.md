@@ -2,9 +2,9 @@
 
 For the good.
 
-* [wasm specs](https://github.com/WebAssembly/spec/tree/master/ml-proto)
+* [wasm specs](https://github.com/WebAssembly/spec/blob/master/ml-proto/README.md)
 
-````
+```
 ;; golang wasm generator github.com/kpmy/tiss
 (module
 	(type $t0
@@ -20,5 +20,6 @@ For the good.
 		(call $fib
 			(i64.const 0)))
 	(start $start))
-````
-**not so pretty :(*
+```
+
+*not so pretty :(*

@@ -8,10 +8,12 @@ import (
 
 	"github.com/kpmy/tiss/gen"
 	"github.com/kpmy/tiss/ir"
+	"github.com/kpmy/tiss/ir/ops"
+	"github.com/kpmy/tiss/ir/types"
 )
 
 func TestDump(t *testing.T) {
-	if f, err := os.Create("dump.wasm"); err == nil {
+	if f, err := os.Create("dump.wast"); err == nil {
 		defer f.Close()
 
 		m := &ir.Module{}
@@ -24,21 +26,23 @@ func TestDump(t *testing.T) {
 		f0.Name("$fib")
 		par := &ir.Param{}
 		par.Name("$x")
-		par.Type(ir.Ti64)
+		par.Type(types.I64)
 		l0 := &ir.Local{}
 		l0.Name("$i")
-		l0.Type(ir.Ti64)
+		l0.Type(types.I64)
 		f0.Params = append(f0.Params, par)
 		f0.Locals = append(f0.Locals, l0)
-		f0.Result = &ir.ResultExpr{Result: ir.Ti64}
+		f0.Result = &ir.ResultExpr{Result: types.I64}
 		ret := &ir.ReturnExpr{}
-		ret.Expr = &ir.ConstExpr{Type: ir.Ti64, Value: 0}
+		ret.Expr = &ir.ConstExpr{Type: types.I64, Value: 0}
 		f0.Code = append(f0.Code, ret)
 
 		fn := &ir.FuncExpr{}
 		fn.Name("$start")
 		fn.Type = &ir.TypeRef{Type: ir.ThisVariable("$t0")}
-		call := &ir.CallExpr{Var: ir.ThisVariable("$fib"), Params: []ir.CodeExpr{&ir.ConstExpr{Type: ir.Ti64, Value: 0}}}
+		call := &ir.CallExpr{}
+		call.Var = ir.ThisVariable("$fib")
+		call.Params = []ir.CodeExpr{&ir.ConstExpr{Type: types.I64, Value: 0}}
 		fn.Code = append(fn.Code, call)
 		m.Func = append(m.Func, f0, fn)
 		m.Start = &ir.StartExpr{Var: ir.ThisVariable("$start")}
@@ -53,4 +57,12 @@ func TestDump(t *testing.T) {
 	} else {
 		t.Error(err)
 	}
+}
+
+func TestOp(t *testing.T) {
+	t.Log(ops.Monadic(types.I32, ops.Clz))
+	t.Log(ops.Monadic(types.F32, ops.Nearest))
+
+	t.Log(ops.Dyadic(types.I64, types.I64, ops.Add, true))
+	t.Log(ops.Dyadic(types.I32, types.I32, ops.Ge, true))
 }
