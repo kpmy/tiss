@@ -222,11 +222,17 @@ type Module struct {
 	Start *StartExpr
 	Func  []*FuncExpr
 	Type  []*TypeDef
+	Table *TableDef
+	Imp   []*Import
 }
 
 func (m *Module) Children() (ret []interface{}) {
 	for _, t := range m.Type {
 		ret = append(ret, t)
+	}
+
+	if m.Table != nil {
+		ret = append(ret, m.Table)
 	}
 
 	for _, f := range m.Func {
@@ -238,5 +244,48 @@ func (m *Module) Children() (ret []interface{}) {
 }
 
 func (m *Module) Validate() (err error) {
+	return
+}
+
+type TableDef struct {
+	ns    `sexpr:"module"`
+	Index []Variable
+}
+
+func (t *TableDef) Validate() error { return nil }
+
+func (t *TableDef) Children() (ret []interface{}) {
+	for _, v := range t.Index {
+		ret = append(ret, v)
+	}
+	return
+}
+
+type Import struct {
+	named
+	Mod    string
+	Func   string
+	Params []*Param
+	Result *ResultExpr
+}
+
+func (i *Import) Validate() error { return nil }
+
+func (i *Import) Children() (ret []interface{}) {
+	if i.name != "" {
+		ret = append(ret, i.name)
+	}
+
+	ret = append(ret, `"`+i.Mod+`"`)
+	ret = append(ret, `"`+i.Func+`"`)
+
+	for _, p := range i.Params {
+		ret = append(ret, p)
+	}
+
+	if !fn.IsNil(i.Result) {
+		ret = append(ret, i.Result)
+	}
+
 	return
 }

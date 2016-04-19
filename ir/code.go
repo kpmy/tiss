@@ -236,3 +236,10 @@ func (c *ConvertOp) Children() (ret []interface{}) {
 }
 
 func (*ConvertOp) Eval() {}
+
+type UnreachableExpr struct {
+	ns `sexpr:"unreachable"`
+}
+
+func (*UnreachableExpr) Validate() error { return nil }
+func (*UnreachableExpr) Eval()           {}

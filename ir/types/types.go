@@ -8,3 +8,7 @@ const (
 	F32 Type = "f32"
 	F64 Type = "f64"
 )
+
+func (t Type) Valid() bool {
+	return t == I32 || t == I64 || t == F32 || t == F64
+}

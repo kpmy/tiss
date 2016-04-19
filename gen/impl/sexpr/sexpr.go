@@ -72,6 +72,8 @@ func (w *wr) Atom(_v interface{}) {
 		w.Atom(v.ValueOf())
 	case int:
 		w.Raw(strconv.Itoa(v))
+	case uint:
+		w.Raw(strconv.FormatUint(uint64(v), 10))
 	default:
 		Halt(100, "wrong atom ", reflect.TypeOf(v))
 	}
@@ -100,9 +102,8 @@ func (w *wr) WriteValue(v interface{}) (err error) {
 			w.Atom(x0)
 		}
 		return
-	}, v).Catch(nil, func(e error) {
-		err = e
-	}).Do()
+	}, v).Do()
+	//.Catch(nil, func(e error) {err = e})
 	return
 }
 
@@ -127,9 +128,8 @@ func (w *wr) WriteExpr(e ir.Expression) (err error) {
 				}
 			}
 			w.Raw(")")
-		}).Catch(nil, func(e error) {
-			err = e
 		}).Do()
+		//.Catch(nil, func(e error) {err = e})
 	}
 	return err
 }

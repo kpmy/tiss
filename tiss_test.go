@@ -71,3 +71,33 @@ func TestOp(t *testing.T) {
 	t.Log(ops.Conv(types.I64, types.F32, ops.Convert, true))
 	t.Log(ops.Conv(types.I64, types.F64, ops.Reinterpret))
 }
+
+func TestExpr(t *testing.T) {
+	{
+		buf := bytes.NewBufferString("")
+		expr := &ir.LoadExpr{}
+		expr.Size = ir.Load32
+		expr.Offset = 14
+		expr.Align = 32
+		expr.Type = types.I64
+		expr.Expr = &ir.ConstExpr{Type: types.I64, Value: 34}
+		if err := gen.NewWriter(buf).WriteExpr(expr); err != nil {
+			t.Error(err)
+		}
+		t.Log(buf.String())
+	}
+	{
+		buf := bytes.NewBufferString("")
+		expr := &ir.StoreExpr{}
+		expr.Size = ir.Load32
+		expr.Offset = 14
+		expr.Align = 32
+		expr.Type = types.I64
+		expr.Expr = &ir.ConstExpr{Type: types.I64, Value: 34}
+		expr.Value = &ir.ConstExpr{Type: types.I64, Value: 124}
+		if err := gen.NewWriter(buf).WriteExpr(expr); err != nil {
+			t.Error(err)
+		}
+		t.Log(buf.String())
+	}
+}
