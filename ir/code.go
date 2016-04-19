@@ -1,6 +1,7 @@
 package ir
 
 import (
+	"github.com/kpmy/tiss/ir/ops"
 	"github.com/kpmy/tiss/ir/types"
 	"github.com/kpmy/ypk/fn"
 	. "github.com/kpmy/ypk/tc"
@@ -152,3 +153,86 @@ func (s *SetLocalExpr) Children() (ret []interface{}) {
 }
 
 func (*SetLocalExpr) Eval() {}
+
+type MonadicOp struct {
+	Op   *ops.MonadicOpCode
+	Expr CodeExpr
+}
+
+func (m *MonadicOp) Name() string {
+	return m.Op.String()
+}
+
+func (m *MonadicOp) Validate() (err error) {
+	if fn.IsNil(m.Expr) {
+		err = Error("no expression for monadic op")
+	}
+
+	if fn.IsNil(m.Op) {
+		err = Error("no operation for monadic op")
+	}
+	return
+}
+
+func (m *MonadicOp) Children() (ret []interface{}) {
+	return append(ret, m.Expr)
+}
+
+func (*MonadicOp) Eval() {}
+
+type DyadicOp struct {
+	Op          *ops.DyadicOpCode
+	Left, Right CodeExpr
+}
+
+func (d *DyadicOp) Name() string {
+	return d.Op.String()
+}
+
+func (d *DyadicOp) Validate() (err error) {
+	if fn.IsNil(d.Left) {
+		err = Error("no left expression for dyadic op")
+	}
+
+	if fn.IsNil(d.Op) {
+		err = Error("no operation for dyadic op")
+	}
+
+	if fn.IsNil(d.Right) {
+		err = Error("no right expression for dyadic op")
+	}
+	return
+}
+
+func (d *DyadicOp) Children() (ret []interface{}) {
+	return append(ret, d.Left, d.Right)
+}
+
+func (*DyadicOp) Eval() {}
+
+type ConvertOp struct {
+	Op   *ops.ConvertOpCode
+	Expr CodeExpr
+}
+
+func (c *ConvertOp) Name() string {
+	return c.Op.String()
+}
+
+func (c *ConvertOp) Validate() (err error) {
+	if fn.IsNil(c.Expr) {
+		err = Error("no expression for convert op")
+	}
+
+	if fn.IsNil(c.Op) {
+		err = Error("no operation for convert op")
+	}
+
+	return
+}
+
+func (c *ConvertOp) Children() (ret []interface{}) {
+	return append(ret, c.Expr)
+}
+
+func (*ConvertOp) Eval() {}

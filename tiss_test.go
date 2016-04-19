@@ -63,6 +63,11 @@ func TestOp(t *testing.T) {
 	t.Log(ops.Monadic(types.I32, ops.Clz))
 	t.Log(ops.Monadic(types.F32, ops.Nearest))
 
-	t.Log(ops.Dyadic(types.I64, types.I64, ops.Add, true))
+	t.Log(ops.Dyadic(types.I64, types.I64, ops.Add))
 	t.Log(ops.Dyadic(types.I32, types.I32, ops.Ge, true))
+
+	t.Log(ops.Dyadic(types.F32, types.F32, ops.Min))
+
+	t.Log(ops.Conv(types.I64, types.F32, ops.Convert, true))
+	t.Log(ops.Conv(types.I64, types.F64, ops.Reinterpret))
 }

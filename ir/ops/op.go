@@ -83,7 +83,7 @@ const Ge Op = "ge"
 //const Ge Op = "ge"
 
 //conversion
-const Wrap Op = "wrap" // i32_ /i64
+const Wrap Op = "wrap" // i32_ /i64 +
 //const Trunc Op = "trunc"             // i32_, i64_ * _s, _u * /f32, /f64
 const Extend Op = "extend"           // i64_ * _s, _u * /i32
 const Convert Op = "convert"         // f32_, f64_ * _s, _u * /i32, /i64
@@ -125,6 +125,7 @@ type DyadicOpCode struct {
 
 var ii_ops = fmt.Sprint(Add, Sub, Mul, Div, Rem, And, Or, Xor, Shl, Shr, RotL, RotR, Eq, Ne, Le, Lt, Ge, Gt)
 var ii_sign = fmt.Sprint(Div, Rem, Shr, Le, Lt, Ge, Gt)
+var ff_ops = fmt.Sprint(Add, Sub, Mul, Div, Min, Max, CopySign, Eq, Ne, Le, Lt, Ge, Gt)
 
 func (d DyadicOpCode) String() (ret string) {
 	if d.l == d.r {
@@ -148,8 +149,13 @@ func Dyadic(l, r types.Type, op Op, signed ...bool) (ret DyadicOpCode) {
 		case types.I32, types.I64:
 			Assert(strings.Contains(ii_ops, string(op)), 21)
 			if strings.Contains(ii_sign, string(op)) {
-				Assert(len(signed) > 0, 21)
+				Assert(len(signed) > 0, 22)
+			} else {
+				Assert(len(signed) == 0, 24)
 			}
+		case types.F32, types.F64:
+			Assert(strings.Contains(ff_ops, string(op)), 23)
+			Assert(len(signed) == 0, 24)
 		default:
 			Halt(100)
 		}
@@ -158,6 +164,98 @@ func Dyadic(l, r types.Type, op Op, signed ...bool) (ret DyadicOpCode) {
 	}
 	ret.l = l
 	ret.r = r
+	ret.op = op
+	if len(signed) > 0 {
+		ret.signed = signed[0]
+	}
+	return
+}
+
+type ConvertOpCode struct {
+	to, from types.Type
+	op       Op
+	signed   bool
+	sign     bool
+}
+
+func (c ConvertOpCode) String() (ret string) {
+	ret = fmt.Sprint(c.to, ".", c.op)
+	if c.sign {
+		if c.signed {
+			ret = fmt.Sprint(ret, "_s")
+		} else {
+			ret = fmt.Sprint(ret, "_u")
+		}
+	}
+	ret = fmt.Sprint(ret, "/", c.from)
+	return
+}
+
+func Conv(from, to types.Type, op Op, signed ...bool) (ret ConvertOpCode) {
+	Assert(from != to, 20)
+	switch to {
+	case types.I32:
+		Assert(strings.Contains(fmt.Sprint(Wrap, Trunc, Reinterpret), string(op)), 21)
+		if strings.Contains(fmt.Sprint(Trunc), string(op)) {
+			ret.sign = true
+			Assert(len(signed) > 0, 23)
+		} else {
+			Assert(len(signed) == 0, 24)
+		}
+		switch op {
+		case Wrap:
+			Assert(from == types.I64, 25)
+		case Trunc, Reinterpret:
+			Assert(from == types.F32, 26)
+		}
+	case types.I64:
+		Assert(strings.Contains(fmt.Sprint(Extend, Trunc, Reinterpret), string(op)), 21)
+		if strings.Contains(fmt.Sprint(Trunc, Extend), string(op)) {
+			ret.sign = true
+			Assert(len(signed) > 0, 23)
+		} else {
+			Assert(len(signed) == 0, 24)
+		}
+		switch op {
+		case Extend:
+			Assert(from == types.I32, 25)
+		case Trunc, Reinterpret:
+			Assert(from == types.F64, 26)
+		}
+	case types.F32:
+		Assert(strings.Contains(fmt.Sprint(Convert, Demote, Reinterpret), string(op)), 21)
+		switch op {
+		case Convert:
+			Assert(from == types.I32 || from == types.I64, 22)
+			Assert(len(signed) > 0, 23)
+			ret.sign = true
+		case Demote:
+			Assert(from == types.F64, 22)
+			Assert(len(signed) == 0, 24)
+		case Reinterpret:
+			Assert(from == types.I32, 23)
+			Assert(len(signed) == 0, 24)
+		}
+	case types.F64:
+		Assert(strings.Contains(fmt.Sprint(Convert, Promote, Reinterpret), string(op)), 21)
+		switch op {
+		case Convert:
+			Assert(from == types.I32 || from == types.I64, 22)
+			Assert(len(signed) > 0, 23)
+			ret.sign = true
+		case Promote:
+			Assert(from == types.F32, 22)
+			Assert(len(signed) == 0, 24)
+		case Reinterpret:
+			Assert(from == types.I64, 23)
+			Assert(len(signed) == 0, 24)
+		}
+	default:
+		Halt(100, "unsupported")
+
+	}
+	ret.to = to
+	ret.from = from
 	ret.op = op
 	if len(signed) > 0 {
 		ret.signed = signed[0]
