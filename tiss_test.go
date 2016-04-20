@@ -100,4 +100,25 @@ func TestExpr(t *testing.T) {
 		}
 		t.Log(buf.String())
 	}
+	{
+		buf := bytes.NewBufferString("")
+		imp := &ir.Import{}
+		imp.Name("$imp")
+		imp.Mod = "mod"
+		imp.Func = "func"
+		if err := gen.NewWriter(buf).WriteExpr(imp); err != nil {
+			t.Error(err)
+		}
+		t.Log(buf.String())
+	}
+	{
+		buf := bytes.NewBufferString("")
+		c := &ir.ConstExpr{}
+		c.Type = types.F64
+		c.Value = 0.05
+		if err := gen.NewWriter(buf).WriteExpr(c); err != nil {
+			t.Error(err)
+		}
+		t.Log(buf.String())
+	}
 }

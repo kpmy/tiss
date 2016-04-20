@@ -22,13 +22,24 @@ type Node interface {
 
 type ns struct{}
 
+type snamed struct {
+	name string
+}
+
+func (n *snamed) Name(s ...string) string {
+	if len(s) > 0 {
+		Assert(s[0][0] == '$' || s[0] == "", 20)
+		n.name = s[0]
+	}
+	return n.name
+}
+
 type named struct {
 	name string
 }
 
 func (n *named) Name(s ...string) string {
 	if len(s) > 0 {
-		Assert(s[0][0] == '$' || s[0] == "", 20)
 		n.name = s[0]
 	}
 	return n.name
@@ -83,7 +94,7 @@ func (s *StartExpr) Children() (ret []interface{}) {
 
 type FuncExpr struct {
 	ns `sexpr:"func"`
-	named
+	snamed
 	Type   *TypeRef
 	Params []*Param
 	Locals []*Local
@@ -92,6 +103,32 @@ type FuncExpr struct {
 }
 
 func (f *FuncExpr) Validate() (err error) {
+	return
+}
+
+type megaParam struct {
+	ns    `sexpr:"param"`
+	Types []types.Type
+}
+
+func (*megaParam) Validate() error { return nil }
+func (m *megaParam) Children() (ret []interface{}) {
+	for _, t := range m.Types {
+		ret = append(ret, t)
+	}
+	return
+}
+
+type megaLocal struct {
+	ns    `sexpr:"local"`
+	Types []types.Type
+}
+
+func (*megaLocal) Validate() error { return nil }
+func (m *megaLocal) Children() (ret []interface{}) {
+	for _, t := range m.Types {
+		ret = append(ret, t)
+	}
 	return
 }
 
@@ -104,18 +141,49 @@ func (f *FuncExpr) Children() (ret []interface{}) {
 		ret = append(ret, f.Type)
 	}
 
-	for _, p := range f.Params {
-		ret = append(ret, p)
+	{
+		var tmp []*Param
+		merge := true
+		mp := &megaParam{}
+		for _, p := range f.Params {
+			tmp = append(tmp, p)
+			mp.Types = append(mp.Types, p.typ)
+			if p.name != "" {
+				merge = false
+			}
+		}
+		if merge {
+			ret = append(ret, mp)
+		} else {
+			for _, p := range tmp {
+				ret = append(ret, p)
+			}
+		}
 	}
 
 	if !fn.IsNil(f.Result) {
 		ret = append(ret, f.Result)
 	}
+	{
+		var tmp []*Local
+		merge := true
+		ml := &megaLocal{}
 
-	for _, l := range f.Locals {
-		ret = append(ret, l)
+		for _, l := range f.Locals {
+			tmp = append(tmp, l)
+			ml.Types = append(ml.Types, l.typ)
+			if l.name != "" {
+				merge = false
+			}
+		}
+		if merge {
+			ret = append(ret, ml)
+		} else {
+			for _, l := range tmp {
+				ret = append(ret, l)
+			}
+		}
 	}
-
 	for _, c := range f.Code {
 		ret = append(ret, c)
 	}
@@ -156,7 +224,7 @@ func (r *ResultExpr) Children() (ret []interface{}) {
 
 type TypeDef struct {
 	ns `sexpr:"type"`
-	named
+	snamed
 	Func *FuncExpr
 }
 
@@ -190,7 +258,7 @@ type Local struct {
 }
 
 type object struct {
-	named
+	snamed
 	typ types.Type
 }
 
@@ -224,9 +292,15 @@ type Module struct {
 	Type  []*TypeDef
 	Table *TableDef
 	Imp   []*Import
+	Exp   []*Export
+	Mem   *Memory
 }
 
 func (m *Module) Children() (ret []interface{}) {
+	if m.Mem != nil {
+		ret = append(ret, m.Mem)
+	}
+
 	for _, t := range m.Type {
 		ret = append(ret, t)
 	}
@@ -235,8 +309,16 @@ func (m *Module) Children() (ret []interface{}) {
 		ret = append(ret, m.Table)
 	}
 
+	for _, i := range m.Imp {
+		ret = append(ret, i)
+	}
+
 	for _, f := range m.Func {
 		ret = append(ret, f)
+	}
+
+	for _, e := range m.Exp {
+		ret = append(ret, e)
 	}
 
 	ret = append(ret, m.Start)
@@ -262,7 +344,8 @@ func (t *TableDef) Children() (ret []interface{}) {
 }
 
 type Import struct {
-	named
+	ns `sexpr:"import"`
+	snamed
 	Mod    string
 	Func   string
 	Params []*Param
@@ -276,8 +359,8 @@ func (i *Import) Children() (ret []interface{}) {
 		ret = append(ret, i.name)
 	}
 
-	ret = append(ret, `"`+i.Mod+`"`)
-	ret = append(ret, `"`+i.Func+`"`)
+	ret = append(ret, []rune(i.Mod))
+	ret = append(ret, []rune(i.Func))
 
 	for _, p := range i.Params {
 		ret = append(ret, p)
@@ -287,5 +370,31 @@ func (i *Import) Children() (ret []interface{}) {
 		ret = append(ret, i.Result)
 	}
 
+	return
+}
+
+type Export struct {
+	ns `sexpr:"export"`
+	named
+	Var Variable
+	Mem bool
+}
+
+func (e *Export) Validate() error {
+	if e.Mem != e.Var.IsEmpty() {
+		return Error("empty export")
+	}
+	return nil
+}
+
+func (e *Export) Children() (ret []interface{}) {
+
+	ret = append(ret, e.name)
+
+	if !e.Var.IsEmpty() {
+		ret = append(ret, e.Var)
+	} else {
+		ret = append(ret, "memory")
+	}
 	return
 }

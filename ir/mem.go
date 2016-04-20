@@ -132,3 +132,52 @@ func (s *StoreExpr) Children() (ret []interface{}) {
 }
 
 func (l *StoreExpr) Eval() {}
+
+const PageSize = 65535
+
+type Memory struct {
+	ns       `sexpr:"memory"`
+	Initial  uint
+	Max      uint
+	Segments []*Segment
+}
+
+type Segment struct {
+	ns     `sexpr:"segment"`
+	Offset uint
+	Data   string
+}
+
+func (s *Segment) Validate() error { return nil }
+func (s *Segment) Children() (ret []interface{}) {
+	return append(ret, s.Offset, []rune(s.Data))
+}
+
+func (m *Memory) Validate() error {
+	if m.Initial > m.Max {
+		return Error("error page limit")
+	}
+
+	off := -1
+	for i, o := range m.Segments {
+		if off > int(o.Offset) {
+			return Error(fmt.Sprint("segments overlap", i-1, o.Offset))
+		}
+		off += int(o.Offset) + len([]rune(o.Data))
+	}
+
+	if off >= int(m.Max)*PageSize {
+		return Error("not enough memory")
+	}
+	return nil
+}
+
+func (m *Memory) Children() (ret []interface{}) {
+	ret = append(ret, m.Initial, m.Max)
+
+	for _, s := range m.Segments {
+		ret = append(ret, s)
+	}
+
+	return
+}

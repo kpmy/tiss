@@ -62,6 +62,10 @@ func validateAtomString(s string) {
 	}
 }
 
+func validateString(r []rune) {
+
+}
+
 func (w *wr) Atom(_v interface{}) {
 	switch v := _v.(type) {
 	case string:
@@ -74,6 +78,13 @@ func (w *wr) Atom(_v interface{}) {
 		w.Raw(strconv.Itoa(v))
 	case uint:
 		w.Raw(strconv.FormatUint(uint64(v), 10))
+	case []rune:
+		validateString(v)
+		w.Raw(`"` + string(v) + `"`)
+	case float64:
+		w.Raw(strconv.FormatFloat(v, 'g', 14, 64))
+	case float32:
+		w.Raw(strconv.FormatFloat(float64(v), 'g', 14, 32))
 	default:
 		Halt(100, "wrong atom ", reflect.TypeOf(v))
 	}
