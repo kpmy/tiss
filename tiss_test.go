@@ -74,20 +74,15 @@ func TestOp(t *testing.T) {
 
 func TestExpr(t *testing.T) {
 	{
-		buf := bytes.NewBufferString("")
 		expr := &ir.LoadExpr{}
 		expr.Size = ir.Load32
 		expr.Offset = 14
 		expr.Align = 32
 		expr.Type = types.I64
 		expr.Expr = &ir.ConstExpr{Type: types.I64, Value: 34}
-		if err := gen.NewWriter(buf).WriteExpr(expr); err != nil {
-			t.Error(err)
-		}
-		t.Log(buf.String())
+		poo(t, expr)
 	}
 	{
-		buf := bytes.NewBufferString("")
 		expr := &ir.StoreExpr{}
 		expr.Size = ir.Load32
 		expr.Offset = 14
@@ -95,30 +90,72 @@ func TestExpr(t *testing.T) {
 		expr.Type = types.I64
 		expr.Expr = &ir.ConstExpr{Type: types.I64, Value: 34}
 		expr.Value = &ir.ConstExpr{Type: types.I64, Value: 124}
-		if err := gen.NewWriter(buf).WriteExpr(expr); err != nil {
-			t.Error(err)
-		}
-		t.Log(buf.String())
+		poo(t, expr)
 	}
 	{
-		buf := bytes.NewBufferString("")
 		imp := &ir.Import{}
 		imp.Name("$imp")
 		imp.Mod = "mod"
 		imp.Func = "func"
-		if err := gen.NewWriter(buf).WriteExpr(imp); err != nil {
-			t.Error(err)
-		}
-		t.Log(buf.String())
+		poo(t, imp)
 	}
 	{
-		buf := bytes.NewBufferString("")
 		c := &ir.ConstExpr{}
 		c.Type = types.F64
 		c.Value = 0.05
-		if err := gen.NewWriter(buf).WriteExpr(c); err != nil {
-			t.Error(err)
-		}
-		t.Log(buf.String())
+		poo(t, c)
 	}
+}
+
+func TestValidation(t *testing.T) {
+	b := &ir.Block{}
+	poo(t, b)
+
+	/* надо проверить все сущности
+	   Br
+	   BrIf
+	   BrTable
+	   CallExpr
+	   CallImportExpr
+	   CallIndirect
+	   CodeExpr
+	   ConstExpr
+	   ConvertOp
+	   CurrentMemoryExpr
+	   DyadicOp
+	   Export
+	   Expression
+	   FuncExpr
+	   GetLocalExpr
+	   GrowMemoryExpr
+	   If
+	   IfExpr
+	   Import
+	   LoadExpr
+	   Local
+	   Loop
+	   Memory
+	   Module
+	   MonadicOp
+	   NopExpr
+	   Param
+	   ResultExpr
+	   ReturnExpr
+	   SetLocalExpr
+	   StartExpr
+	   StoreExpr
+	   TableDef
+	   TypeDef
+	   TypeRef
+	   UnreachableExpr
+	   Variable
+	*/
+}
+
+func poo(t *testing.T, e ir.Expression) {
+	buf := bytes.NewBufferString("")
+	if err := gen.NewWriter(buf).WriteExpr(e); err != nil {
+		t.Error(err)
+	}
+	t.Log(buf.String())
 }
