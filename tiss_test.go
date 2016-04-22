@@ -111,6 +111,10 @@ func TestValidation(t *testing.T) {
 	b := &ir.Block{}
 	poo(t, b)
 
+	l0 := &ir.Local{}
+	l0.Name("$i")
+	l0.Type(types.I64)
+	poo(t, l0)
 	/* надо проверить все сущности
 	   Br
 	   BrIf
@@ -132,7 +136,6 @@ func TestValidation(t *testing.T) {
 	   IfExpr
 	   Import
 	   LoadExpr
-	   Local
 	   Loop
 	   Memory
 	   Module

@@ -152,7 +152,7 @@ func (f *FuncExpr) Children() (ret []interface{}) {
 				merge = false
 			}
 		}
-		if merge {
+		if merge && len(f.Params) > 0 {
 			ret = append(ret, mp)
 		} else {
 			for _, p := range tmp {
@@ -176,7 +176,7 @@ func (f *FuncExpr) Children() (ret []interface{}) {
 				merge = false
 			}
 		}
-		if merge {
+		if merge && len(f.Locals) > 0 {
 			ret = append(ret, ml)
 		} else {
 			for _, l := range tmp {
