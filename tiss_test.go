@@ -1,6 +1,7 @@
 package tiss
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"os"
@@ -10,6 +11,9 @@ import (
 	"github.com/kpmy/tiss/ir"
 	"github.com/kpmy/tiss/ir/ops"
 	"github.com/kpmy/tiss/ir/types"
+	"github.com/kpmy/tiss/ps"
+	"github.com/kpmy/ypk/fn"
+	"github.com/nsf/sexp"
 )
 
 func TestDump(t *testing.T) {
@@ -51,6 +55,45 @@ func TestDump(t *testing.T) {
 		if err = gen.NewWriter(buf, gen.Opts{PrettyPrint: true}).WriteExpr(m); err == nil {
 			t.Log(buf.String())
 			io.Copy(f, buf)
+		} else {
+			t.Error(err)
+		}
+	} else {
+		t.Error(err)
+	}
+}
+
+func TestRead(t *testing.T) {
+	if f, err := os.Open("dump.wast"); err == nil {
+		defer f.Close()
+		fi, _ := f.Stat()
+		var ctx sexp.SourceContext
+		fc := ctx.AddFile("dump.wast", int(fi.Size()))
+		if nl, err := sexp.Parse(bufio.NewReader(f), fc); err == nil {
+			n := nl.Children
+			var dump func(*sexp.Node)
+			dump = func(n *sexp.Node) {
+				if n.IsList() {
+					t.Log("(")
+					for x := n.Children; x != nil; x = x.Next {
+						dump(x)
+					}
+					t.Log(")")
+				} else {
+					t.Log(n.Value)
+				}
+			}
+
+			dump(n)
+		} else {
+			t.Error(err)
+		}
+	} else {
+		t.Error(err)
+	}
+	if f, err := os.Open("dump.wast"); err == nil {
+		if m, err := ps.Parse(f); err == nil {
+			poo(t, m)
 		} else {
 			t.Error(err)
 		}
@@ -156,6 +199,9 @@ func TestValidation(t *testing.T) {
 }
 
 func poo(t *testing.T, e ir.Expression) {
+	if fn.IsNil(e) {
+		t.Fatal("NIL")
+	}
 	buf := bytes.NewBufferString("")
 	if err := gen.NewWriter(buf).WriteExpr(e); err != nil {
 		t.Error(err)

@@ -25,12 +25,14 @@ type wr struct {
 	base  io.Writer
 	opts  gen.Opts
 	depth int
+	line  int
 }
 
 func (w *wr) Ln() {
-	if w.opts.PrettyPrint {
+	if w.opts.PrettyPrint && w.line >= 0 {
 		w.base.Write([]byte("\n"))
 	}
+	w.line++
 }
 
 func (w *wr) Tab() {
@@ -152,7 +154,8 @@ func New(w io.Writer, o ...gen.Opts) gen.Writer {
 		ret.opts = o[0]
 	}
 	if ret.opts.PrettyPrint {
-		ret.Raw(";; github.com/kpmy/tiss/generator")
+		//ret.Raw(";; github.com/kpmy/tiss/generator")
+		ret.line = -1
 	}
 
 	return ret
