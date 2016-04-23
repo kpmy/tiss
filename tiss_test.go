@@ -1,7 +1,6 @@
 package tiss
 
 import (
-	"bufio"
 	"bytes"
 	"io"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"github.com/kpmy/tiss/ir/types"
 	"github.com/kpmy/tiss/ps"
 	"github.com/kpmy/ypk/fn"
-	"github.com/nsf/sexp"
 )
 
 func TestDump(t *testing.T) {
@@ -52,7 +50,7 @@ func TestDump(t *testing.T) {
 		m.Start = &ir.StartExpr{Var: ir.ThisVariable("$start")}
 
 		buf := bytes.NewBuffer(nil)
-		if err = gen.NewWriter(buf, gen.Opts{PrettyPrint: true}).WriteExpr(m); err == nil {
+		if err = gen.NewWriter(buf, gen.Opts{PrettyPrint: false}).WriteExpr(m); err == nil {
 			t.Log(buf.String())
 			io.Copy(f, buf)
 		} else {
@@ -64,33 +62,6 @@ func TestDump(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	if f, err := os.Open("dump.wast"); err == nil {
-		defer f.Close()
-		fi, _ := f.Stat()
-		var ctx sexp.SourceContext
-		fc := ctx.AddFile("dump.wast", int(fi.Size()))
-		if nl, err := sexp.Parse(bufio.NewReader(f), fc); err == nil {
-			n := nl.Children
-			var dump func(*sexp.Node)
-			dump = func(n *sexp.Node) {
-				if n.IsList() {
-					t.Log("(")
-					for x := n.Children; x != nil; x = x.Next {
-						dump(x)
-					}
-					t.Log(")")
-				} else {
-					t.Log(n.Value)
-				}
-			}
-
-			dump(n)
-		} else {
-			t.Error(err)
-		}
-	} else {
-		t.Error(err)
-	}
 	if f, err := os.Open("dump.wast"); err == nil {
 		if m, err := ps.Parse(f); err == nil {
 			poo(t, m)

@@ -15,7 +15,11 @@ type ReturnExpr struct {
 func (r *ReturnExpr) Validate() error { return nil }
 func (r *ReturnExpr) Eval()           {}
 func (r *ReturnExpr) Children() (ret []interface{}) {
-	return append(ret, r.Expr)
+	if !fn.IsNil(r.Expr) {
+		return append(ret, r.Expr)
+	}
+
+	return
 }
 
 type ConstExpr struct {
