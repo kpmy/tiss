@@ -2,6 +2,7 @@ package ir
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/kpmy/tiss/ir/types"
 	"github.com/kpmy/ypk/fn"
@@ -75,7 +76,7 @@ func (l *LoadExpr) Validate() error {
 		return Error("invalid load size")
 	}
 
-	if l.Align != 1 && l.Align%2 == 1 {
+	if l.Align > 1 && l.Align%2 == 1 {
 		return Error("load align must be power of 2")
 	}
 
@@ -86,7 +87,17 @@ func (l *LoadExpr) Validate() error {
 }
 
 func (l *LoadExpr) Children() (ret []interface{}) {
-	return append(ret, l.Offset, l.Align, l.Expr)
+
+	if l.Offset > 0 {
+		ret = append(ret, fmt.Sprint("offset=", strconv.FormatUint(uint64(l.Offset), 32)))
+	}
+
+	if l.Align > 0 {
+		ret = append(ret, fmt.Sprint("align=", strconv.FormatUint(uint64(l.Align), 32)))
+	}
+
+	ret = append(ret, l.Expr)
+	return
 }
 
 func (l *LoadExpr) Eval() {}
@@ -113,7 +124,7 @@ func (s *StoreExpr) Validate() error {
 		return Error("invalid store size")
 	}
 
-	if s.Align != 1 && s.Align%2 == 1 {
+	if s.Align > 1 && s.Align%2 == 1 {
 		return Error("store align must be power of 2")
 	}
 
@@ -128,7 +139,17 @@ func (s *StoreExpr) Validate() error {
 }
 
 func (s *StoreExpr) Children() (ret []interface{}) {
-	return append(ret, s.Offset, s.Align, s.Expr, s.Value)
+
+	if s.Offset > 0 {
+		ret = append(ret, fmt.Sprint("offset=", strconv.FormatUint(uint64(s.Offset), 32)))
+	}
+
+	if s.Align > 0 {
+		ret = append(ret, fmt.Sprint("align=", strconv.FormatUint(uint64(s.Align), 32)))
+	}
+
+	ret = append(ret, s.Expr, s.Value)
+	return
 }
 
 func (l *StoreExpr) Eval() {}

@@ -123,7 +123,7 @@ func (p *pr) list2obj(n []*sexp.Node) (ret interface{}) {
 			ret = t
 		} else if len(data) == 1 && data[0].IsScalar() {
 			t := &ir.TypeRef{}
-			t.Type = ir.ThisVariable(data[0].Value)
+			t.Type = ir.ThisVar(data[0].Value)
 			ret = t
 		}
 	case typ == "func":
@@ -156,7 +156,7 @@ func (p *pr) list2obj(n []*sexp.Node) (ret interface{}) {
 	case typ == "start":
 		s := &ir.StartExpr{}
 		Assert(len(data) > 0, 20)
-		s.Var = ir.ThisVariable(data[0].Value)
+		s.Var = ir.ThisVar(data[0].Value)
 
 		ret = s
 	case typ == "param":
@@ -201,7 +201,7 @@ func (p *pr) list2obj(n []*sexp.Node) (ret interface{}) {
 		c := &ir.CallExpr{}
 		start := 0
 		if len(data) > 0 && data[0].IsScalar() {
-			c.Var = ir.ThisVariable(data[0].Value)
+			c.Var = ir.ThisVar(data[0].Value)
 			start = 1
 		}
 		for i := start; i < len(data); i++ {

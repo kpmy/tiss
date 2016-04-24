@@ -38,16 +38,15 @@ func TestDump(t *testing.T) {
 		ret := &ir.ReturnExpr{}
 		ret.Expr = &ir.ConstExpr{Type: types.I64, Value: 0}
 		f0.Code = append(f0.Code, ret)
-
 		fn := &ir.FuncExpr{}
 		fn.Name("$start")
-		fn.Type = &ir.TypeRef{Type: ir.ThisVariable("$t0")}
+		fn.Type = &ir.TypeRef{Type: ir.ThisVar("$t0")}
 		call := &ir.CallExpr{}
-		call.Var = ir.ThisVariable("$fib")
+		call.Var = ir.ThisVar("$fib")
 		call.Params = []ir.CodeExpr{&ir.ConstExpr{Type: types.I64, Value: 0}}
 		fn.Code = append(fn.Code, call)
 		m.Func = append(m.Func, f0, fn)
-		m.Start = &ir.StartExpr{Var: ir.ThisVariable("$start")}
+		m.Start = &ir.StartExpr{Var: ir.ThisVar("$start")}
 
 		buf := bytes.NewBuffer(nil)
 		if err = gen.NewWriter(buf, gen.Opts{PrettyPrint: false}).WriteExpr(m); err == nil {

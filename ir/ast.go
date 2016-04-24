@@ -50,7 +50,7 @@ type Variable struct {
 	iv *int
 }
 
-func ThisVariable(_x interface{}) (ret Variable) {
+func ThisVar(_x interface{}) (ret Variable) {
 	switch x := _x.(type) {
 	case string:
 		Assert(x[0] == '$', 20)
@@ -270,10 +270,6 @@ func (o *object) Type(t ...types.Type) types.Type {
 }
 
 func (o *object) Validate() error {
-	if o.name == "" {
-		return Error("empty object name")
-	}
-
 	if o.typ == "" {
 		return Error("empty object type")
 	}
@@ -282,7 +278,10 @@ func (o *object) Validate() error {
 }
 
 func (o *object) Children() (ret []interface{}) {
-	return append(ret, o.name, string(o.typ))
+	if o.name != "" {
+		ret = append(ret, o.name)
+	}
+	return append(ret, string(o.typ))
 }
 
 type Module struct {
@@ -321,7 +320,9 @@ func (m *Module) Children() (ret []interface{}) {
 		ret = append(ret, e)
 	}
 
-	ret = append(ret, m.Start)
+	if m.Start != nil {
+		ret = append(ret, m.Start)
+	}
 	return
 }
 
