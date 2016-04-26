@@ -19,6 +19,8 @@ import (
 	"github.com/kpmy/tiss/ir"
 	"github.com/kpmy/tiss/ir/ops"
 	"github.com/kpmy/tiss/ir/types"
+	"github.com/kpmy/tiss/ps"
+	_ "github.com/kpmy/tiss/ps/impl"
 	"github.com/kpmy/ypk/fn"
 	. "github.com/kpmy/ypk/tc"
 )
@@ -291,9 +293,19 @@ func main() {
 		compile()
 		if o, err := os.Create(filepath.Join(filepath.Dir(filename), strings.TrimSuffix(filepath.Base(filename), filepath.Ext(filepath.Base(filename)))+".wast")); err == nil {
 			buf := bytes.NewBuffer(nil)
-			if err := gen.NewWriter(buf, gen.Opts{PrettyPrint: true}).WriteExpr(mod); err == nil {
+			if err := gen.NewWriter(buf, gen.Opts{PrettyPrint: false}).WriteExpr(mod); err == nil {
 				log.Println(buf.String())
-				io.Copy(o, buf)
+				if parsed, err := ps.Parse(bytes.NewBuffer(buf.Bytes())); err == nil {
+					buf2 := bytes.NewBuffer(nil)
+					if err := gen.NewWriter(buf2, gen.Opts{PrettyPrint: false}).WriteExpr(parsed); err == nil {
+						log.Println(buf2.String())
+						io.Copy(o, buf2)
+					} else {
+						Halt(100, err)
+					}
+				} else {
+					Halt(100, err)
+				}
 			} else {
 				log.Fatal(err)
 			}

@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/kpmy/tiss/ir"
+	"github.com/kpmy/tiss/ir/ops"
 	"github.com/kpmy/tiss/ir/types"
 	"github.com/kpmy/ypk/fn"
 	. "github.com/kpmy/ypk/tc"
@@ -99,6 +101,10 @@ func (p *pr) list2obj(n []*sexp.Node) (ret interface{}) {
 					m.Func = append(m.Func, x)
 				case *ir.StartExpr:
 					m.Start = x
+				case *ir.Memory:
+					m.Mem = x
+				case *ir.Import:
+					m.Imp = append(m.Imp, x)
 				default:
 					Halt(100, reflect.TypeOf(x))
 				}
@@ -210,10 +216,133 @@ func (p *pr) list2obj(n []*sexp.Node) (ret interface{}) {
 		}
 
 		ret = c
+	case typ == "call_import":
+		c := &ir.CallImportExpr{}
+		start := 0
+		if len(data) > 0 && data[0].IsScalar() {
+			c.Var = ir.ThisVar(data[0].Value)
+			start = 1
+		}
+		for i := start; i < len(data); i++ {
+			x := p.list2obj(node2list(data[i]))
+			c.Params = append(c.Params, x.(ir.CodeExpr))
+		}
+
+		ret = c
+	case typ == "memory":
+		m := &ir.Memory{}
+		start := 0
+		if data[0].IsScalar() {
+			m.Initial = uint(sexp.Help(data[0]).MustInt())
+			start = 1
+		} else {
+			Halt(100)
+		}
+
+		if data[1].IsScalar() {
+			m.Max = uint(sexp.Help(data[1]).MustInt())
+			start = 2
+		} else {
+			Halt(100)
+		}
+
+		if len(data) > start && data[start].IsList() {
+			for i := start; i < len(data); i++ {
+				x := p.list2obj(node2list(data[i]))
+				m.Segments = append(m.Segments, x.(*ir.Segment))
+			}
+		}
+		ret = m
+	case typ == "import":
+		i := &ir.Import{}
+		start := 0
+
+		if strings.HasPrefix(data[0].Value, "$") { //imp name
+			i.Name(data[0].Value)
+			start = 1
+		}
+
+		Assert(data[1].IsScalar(), 20)
+		i.Mod = strings.Trim(data[1].Value, `"`)
+		Assert(data[2].IsScalar(), 21)
+		i.Func = strings.Trim(data[2].Value, `"`)
+		start += 2
+
+		for j := start; j < len(data); j++ {
+			_x := p.list2obj(node2list(data[j]))
+			switch x := _x.(type) {
+			case *ir.Param:
+				i.Params = append(i.Params, x)
+			default:
+				Halt(100, reflect.TypeOf(x))
+			}
+		}
+
+		ret = i
+	case typ == "set_local":
+		s := &ir.SetLocalExpr{}
+		s.Var = ir.ThisVar(data[0].Value)
+		x := p.list2obj(node2list(data[1]))
+		s.Expr = x.(ir.CodeExpr)
+		ret = s
+	case typ == "get_local":
+		g := &ir.GetLocalExpr{}
+		g.Var = ir.ThisVar(data[0].Value)
+
+		ret = g
+	case typ == "loop":
+		l := &ir.Loop{}
+		start := 0
+		if data[start].IsScalar() {
+			l.End.Name(data[0].Value)
+			start++
+		}
+
+		if data[start].IsScalar() {
+			l.Start.Name(data[start].Value)
+			start++
+		}
+
+		for i := start; i < len(data); i++ {
+			x := p.list2obj(node2list(data[i]))
+			l.Expr = append(l.Expr, x.(ir.CodeExpr))
+		}
+		ret = l
+	case typ == "if":
+		i := &ir.If{}
+		i.CondExpr = p.list2obj(node2list(data[0])).(ir.CodeExpr)
+
+		t := p.list2obj(node2list(data[1]))
+		i.Expr = t.([]ir.CodeExpr)
+
+		if len(data) > 2 {
+			e := p.list2obj(node2list(data[2]))
+			i.ElseExpr = e.([]ir.CodeExpr)
+		}
+		ret = i
+	case typ == "then" || typ == "else":
+		var el []ir.CodeExpr
+		for _, x := range data {
+			e := p.list2obj(node2list(x)).(ir.CodeExpr)
+			el = append(el, e)
+		}
+		ret = el
+	case typ == "br":
+		b := &ir.Br{}
+		b.Var = ir.ThisVar(data[0].Value)
+
+		if len(data) > 1 {
+			x := p.list2obj(node2list(data[1]))
+			b.Expr = x.(ir.CodeExpr)
+		}
+
+		ret = b
+	case typ == "nop":
+		ret = &ir.NopExpr{}
 	case isOp(typ):
 		t, n, s, c := splitOp(typ)
-		switch n {
-		case "const":
+		switch {
+		case n == "const":
 			op := &ir.ConstExpr{}
 			Assert(len(data) == 1, 20)
 			Assert(data[0].IsScalar(), 21)
@@ -227,8 +356,45 @@ func (p *pr) list2obj(n []*sexp.Node) (ret interface{}) {
 				}
 			}
 			ret = op
+		case strings.HasPrefix(n, "load"):
+			l := &ir.LoadExpr{}
+			l.Type = t
+			size, _ := strconv.Atoi(strings.TrimPrefix(n, "load"))
+			l.Size = ir.LoadSize(size)
+			if s != nil {
+				l.Signed = *s
+			}
+
+			x := p.list2obj(node2list(data[0]))
+			l.Expr = x.(ir.CodeExpr)
+			ret = l
+		case strings.HasPrefix(n, "store"):
+			s := &ir.StoreExpr{}
+			s.Type = t
+			size, _ := strconv.Atoi(strings.TrimPrefix(n, "store"))
+			s.Size = ir.LoadSize(size)
+
+			x := p.list2obj(node2list(data[0]))
+			s.Expr = x.(ir.CodeExpr)
+			v := p.list2obj(node2list(data[1]))
+			s.Value = v.(ir.CodeExpr)
+			ret = s
+		case strings.Contains(fmt.Sprint(ops.Add, ops.Eq), n):
+			d := &ir.DyadicOp{}
+			if s != nil {
+				Halt(100)
+			} else {
+				op := ops.Dyadic(t, t, ops.Op(n))
+				d.Op = &op
+			}
+			l := p.list2obj(node2list(data[0]))
+			d.Left = l.(ir.CodeExpr)
+			r := p.list2obj(node2list(data[1]))
+			d.Right = r.(ir.CodeExpr)
+
+			ret = d
 		default:
-			Halt(100, t, n, s, c)
+			Halt(100, t, " ", n, " ", s, " ", c)
 		}
 	default:
 		Halt(100, typ)
