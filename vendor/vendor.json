@@ -1,0 +1,25 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "T9BUG2cBSm4aIoeaA4E8L6GqmrY=",
+			"path": "github.com/kpmy/ypk/fn",
+			"revision": "4082671ba21f2ddc33f3c962dccbe8927397ea98",
+			"revisionTime": "2016-04-17T16:49:33Z"
+		},
+		{
+			"checksumSHA1": "QKskybaMD1QYBD3jktDRtEipUfg=",
+			"path": "github.com/kpmy/ypk/tc",
+			"revision": "4082671ba21f2ddc33f3c962dccbe8927397ea98",
+			"revisionTime": "2016-04-17T16:49:33Z"
+		},
+		{
+			"checksumSHA1": "V1rnE8/VPuorWwdNvgvC6+6L8mA=",
+			"path": "github.com/nsf/sexp",
+			"revision": "d3d2f2591f1dfc9f156859746ebf25eb4f85f2f6",
+			"revisionTime": "2013-06-20T09:45:10Z"
+		}
+	],
+	"rootPath": "github.com/kpmy/tiss"
+}
