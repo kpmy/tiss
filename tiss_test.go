@@ -128,6 +128,15 @@ func TestValidation(t *testing.T) {
 	l0.Name("$i")
 	l0.Type(types.I64)
 	poo(t, l0)
+
+	s := &ir.Segment{}
+	s.Offset = 0
+	s.Data = append(s.Data, "f23fcaeaef2f42f34")
+	poo(t, s)
+
+	m := &ir.Module{}
+	m.Binary = []byte{0, 1, 2, 3}
+	poo(t, m)
 	/* надо проверить все сущности
 	   Br
 	   BrIf

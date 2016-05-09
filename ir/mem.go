@@ -3,6 +3,7 @@ package ir
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/kpmy/tiss/ir/types"
 	"github.com/kpmy/ypk/fn"
@@ -166,12 +167,20 @@ type Memory struct {
 type Segment struct {
 	ns     `sexpr:"segment"`
 	Offset uint
-	Data   string
+	Data   []string
 }
 
 func (s *Segment) Validate() error { return nil }
 func (s *Segment) Children() (ret []interface{}) {
-	return append(ret, s.Offset, []rune(s.Data))
+	ret = append(ret, s.Offset)
+	for _, d := range s.Data {
+		s := ""
+		for _, b := range []byte(d) {
+			s = fmt.Sprint(s, `\`+strings.Replace(fmt.Sprintf("%2x", b), " ", "0", -1))
+		}
+		ret = append(ret, []rune(s))
+	}
+	return ret
 }
 
 func (m *Memory) Validate() error {
@@ -184,7 +193,11 @@ func (m *Memory) Validate() error {
 		if off > int(o.Offset) {
 			return Error(fmt.Sprint("segments overlap", i-1, o.Offset))
 		}
-		off += int(o.Offset) + len([]rune(o.Data))
+		blen := 0
+		for _, d := range o.Data {
+			blen = blen + len([]byte(d))
+		}
+		off += int(o.Offset) + blen
 	}
 
 	if off >= int(m.Max)*PageSize {

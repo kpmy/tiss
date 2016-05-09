@@ -1,7 +1,9 @@
 package ir //import "github.com/kpmy/tiss/ir"
 
 import (
+	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/kpmy/tiss/ir/types"
 	"github.com/kpmy/ypk/fn"
@@ -285,43 +287,52 @@ func (o *object) Children() (ret []interface{}) {
 }
 
 type Module struct {
-	ns    `sexpr:"module"`
-	Start *StartExpr
-	Func  []*FuncExpr
-	Type  []*TypeDef
-	Table *TableDef
-	Imp   []*Import
-	Exp   []*Export
-	Mem   *Memory
+	ns     `sexpr:"module"`
+	Start  *StartExpr
+	Func   []*FuncExpr
+	Type   []*TypeDef
+	Table  *TableDef
+	Imp    []*Import
+	Exp    []*Export
+	Mem    *Memory
+	Binary []byte
 }
 
 func (m *Module) Children() (ret []interface{}) {
-	if m.Mem != nil {
-		ret = append(ret, m.Mem)
-	}
+	if len(m.Binary) == 0 {
+		if m.Mem != nil {
+			ret = append(ret, m.Mem)
+		}
 
-	for _, t := range m.Type {
-		ret = append(ret, t)
-	}
+		for _, t := range m.Type {
+			ret = append(ret, t)
+		}
 
-	if m.Table != nil {
-		ret = append(ret, m.Table)
-	}
+		if m.Table != nil {
+			ret = append(ret, m.Table)
+		}
 
-	for _, i := range m.Imp {
-		ret = append(ret, i)
-	}
+		for _, i := range m.Imp {
+			ret = append(ret, i)
+		}
 
-	for _, f := range m.Func {
-		ret = append(ret, f)
-	}
+		for _, f := range m.Func {
+			ret = append(ret, f)
+		}
 
-	for _, e := range m.Exp {
-		ret = append(ret, e)
-	}
+		for _, e := range m.Exp {
+			ret = append(ret, e)
+		}
 
-	if m.Start != nil {
-		ret = append(ret, m.Start)
+		if m.Start != nil {
+			ret = append(ret, m.Start)
+		}
+	} else {
+		s := ""
+		for _, b := range m.Binary {
+			s = fmt.Sprint(s, `\`+strings.Replace(fmt.Sprintf("%2x", b), " ", "0", -1))
+		}
+		ret = append(ret, []rune(s))
 	}
 	return
 }
