@@ -2,7 +2,7 @@
 
 For the good.
 
-* [wasm specs](https://github.com/WebAssembly/spec/blob/master/ml-proto/README.md)
+* [wasm specs](https://github.com/WebAssembly/spec/)
 
 ```
 ;; golang wasm generator github.com/kpmy/tiss
